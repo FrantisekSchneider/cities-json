@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    labels:
+        app: cities
+    name: cities
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: cities
+    strategy:
+        type: RollingUpdate
+        rollingUpdate:
+            maxUnavailable: 0
+            maxSurge: 1
+    template:
+        metadata:
+            labels:
+                app: cities
+        spec:
+            containers:
+                -   name: json-server
+                    image: williamyeh/json-server
+                    command: ["json-server", "--watch", "/data/cities.json", "--port", "3000"]
+                    ports:
+                        -   containerPort: 3000
+                    volumeMounts:
+                        -   mountPath: "/data"
+                            name: json-storage
+            initContainers:
+                -   name: cities-init
+                    image: cirrusci/wget
+                    command: ["wget", "--no-check-certificate", "https://raw.githubusercontent.com/FrantisekSchneider/cities-json/master/cities.json", "-O", "/data/cities.json"]
+                    volumeMounts:
+                        -   mountPath: "/data"
+                            name: json-storage
+            volumes:
+                -   name: json-storage
+                    emptyDir: {}
+
